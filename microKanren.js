@@ -13,18 +13,23 @@ let nats = nextNat(0);
 let mzero = empty;
 let unit = s => cons(s, mzero);
 
-function mapStream(s, f) { 
+function mapStream(ss, f) { 
   let result = [];
-  while (!isEmpty(s)) {
-    result.push(f(car(s)));
-    s = cdr(s);
+  while (!isEmpty(ss)) {
+    result.push(f(car(ss)));
+    ss = cdr(ss);
   }
   return result;
 }
 
-function bind(ss, g) {
+let disj = (g1, g2) => s => mplus(g1(s), g2(s));
+let conj = (g1, g2) => s => bind(g1(s), g2);
 
-}
+// takes in function and returns result of that function with a new lvar
+let fresh = f => f(lvar(''));
+
+let bind = (ss, g) => 
+  isEmpty(ss) ? ss : mplus(g(car(ss)), bind(cdr(ss), g));
 
 // appends two substitutionStreams together
 let mplus = (s1, s2) => 
@@ -38,6 +43,10 @@ function eqeq(u, v) {
     return extS ? unit(extS) : mzero;
   }
 }
+
+let aAndB = (a, b) => conj(
+  eqeq(a, 7),
+  disj(eqeq(b, 5), eqeq(b,6)));
 
 function lvar(name) {
   return Symbol(name);
@@ -114,16 +123,30 @@ function unify(u, v, s) {
 function run() {
   let a = lvar('a');
   let b = lvar('b');
-  let c = lvar('c');
+  // let c = lvar('c');
 
-  let goal1 = eqeq(a,1);
-  let ss1 = goal1(emptySub);
-  let goal2 = eqeq(a,2);
-  let ss2 = goal2(emptySub);
-  let goal3 = eqeq(a,3);
-  let ss3 = goal3(emptySub);
+  // let goal1 = eqeq(a,1);
+  // let ss1 = goal1(emptySub);
+  // let goal2 = eqeq(a,2);
+  // let ss2 = goal2(emptySub);
+  // let goal3 = eqeq(b,5);
+  // let ss3 = goal3(emptySub);
 
-  console.log(mapStream(mplus(mplus(ss1,ss2), ss3), (s) => walkStar(a, s)));
+  // let longStream = mplus(mplus(ss1,ss2), ss3);
+  // mapStream(bind(longStream, goal3), (s) => {
+  //   console.log("a= ", walkStar(a, s)); 
+  //   console.log("b= ", walkStar(b, s));  
+  // });
+
+  let goal = aAndB(a, b);
+  let ss = goal(emptySub);
+  mapStream(ss, (s) => {
+    console.log("a= ", walkStar(a, s)); 
+    console.log("b= ", walkStar(b, s));  
+  });
+
+
+  //console.log(mapStream(mplus(mplus(ss1,ss2), ss3), (s) => walkStar(a, s)));
 }
 
 run();
